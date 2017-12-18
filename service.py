@@ -1,61 +1,56 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
 
-# import libraries
+__copyright__ = """
+    Apache 2.0
+    """
+__version__ = '0.4.0'
+__doc__ = 'for example: python service.py -u https://wordpress.com/learn-more/?v=blog'
+
+
+# import necessary libraries
 import requests
+import urllib
+import json
+import argparse
 from lxml import etree
 from lxml import html
-
-#Necessary
-import urllib
 from lxml.html import fromstring
 
-url = 'https://wordpress.com/learn-more/?v=blog'
-page = requests.get(url, timeout=5)
-
-output = {};
-atom_array = [];
-rss_array = [];
-
-#if page.status_code == requests.codes.ok:
-#  print(page.status_code)
-#  print(page.headers['content-type'])
-#  print(page.encoding)
-#  contentb = page.content
-#  contentt = page.text
+output = {}
+atom_array = []
+rss_array = []
 
 def create_array(link, type):
-  atom_array.append('atom-test')
-  atom_array.append('atom-test2')
-  atom_array.append('atom-test3')
-  rss_array.append('rss-test')
-  rss_array.append('rss-test2')
-  rss_array.append('rss-test3')
-  pass
-
+  if (type == "application/rss+xml"):
+      rss_array.append(link)
+  elif (type == "application/atom+xml"):
+      atom_array.append(link)
 
 def return_output():
   output['atom'] = atom_array
   output['rss'] = rss_array
-  print(output)
-  #console.log(JSON.stringify(output));
+  print(json.dumps(output, separators=(',',':')))
 
-print('')
-print('')
-content = urllib.request.urlopen(url).read().decode('utf-8')
-doc = fromstring(content)
-#print(doc.find_class('wpcom-landing'))
-for child in doc:
-  print(child.tag, child.attrib)
-iters = doc.getiterator()
-for item in iters:
-  stag = item.tag
-  stype = item.attrib.get('type')
-  stitle = item.attrib.get('title')
-  shref = item.attrib.get('href')
-  sitems = item.items()
-  if (stag == "link"):
-    print('Tag: ' + str(stag) + ' Title: ' + str(stitle) + ' Type: ' + str(stype) + ' href: ' + str(shref))
-create_array('','')
+def main():
+    parser = argparse.ArgumentParser(description='Query the RSS and ATOM feeds from an URL')
+    parser.add_argument('-u','--url', help='Please provide an URL', required=True)
+    parsed_args = parser.parse_args()
+    url = parsed_args.url
+    content = urllib.request.urlopen(url).read().decode('utf-8')
+    doc = fromstring(content)
+    iters = doc.getiterator()
+    for item in iters:
+      stag = item.tag
+      stype = item.attrib.get('type')
+      shref = item.attrib.get('href')
+      if (stag == "link" and stype == "application/rss+xml") or (stag == "link" and stype == "application/atom+xml"):
+        create_array(shref,stype)
+    return_output()
 
-return_output()
+if __name__ == '__main__':
+  try:
+    main()
+  except:
+    print("Something went wrong, handle the error")
 
-  
